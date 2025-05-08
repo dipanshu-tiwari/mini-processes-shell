@@ -93,7 +93,3 @@ Run it:
 - Commands are executed in the order they appear but concurrently (not sequentially) when separated by `&`.
 
 ***
-
-## 📄 License
-
-Feel free to use or adapt this for educational or personal use. Attribution appreciated but not required.
