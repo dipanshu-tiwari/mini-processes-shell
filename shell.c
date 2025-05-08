@@ -6,11 +6,13 @@
 #include <string.h>
 #include <stdlib.h>
 
+// structure to store each command
 typedef struct {
     char** tokens;
     int len;
 } cmd;
 
+// counts the occurrence of the tgt char in string str
 int countChar(char* str, char tgt){
     int cnt = 0;
     while ((*str) != '\n'){
@@ -20,6 +22,7 @@ int countChar(char* str, char tgt){
     return cnt;
 }
 
+// error handler
 void ExitWithCode(int errCode){
     if (errCode == 0) exit(0);
     else {
@@ -29,13 +32,16 @@ void ExitWithCode(int errCode){
     }
 }
 
-void ParseCommand(cmd* cmd_list, int cmd_list_len){
+// execute parsed commands
+void ExecuteCommand(cmd* cmd_list, int cmd_list_len){
     for (int i=0; i<cmd_list_len; ++i){
+
+        // built-in commands
 
         if (strcmp(cmd_list[i].tokens[0], "exit") == 0){
             ExitWithCode(0);
         }
-        
+
         int rc = fork();
         if (rc == 0){
             execvp(cmd_list[i].tokens[0], cmd_list[i].tokens);
@@ -60,23 +66,30 @@ int main(){
         }
         if (inp[len - 1] == '\n') inp[len - 1] = '\0';
 
-        int size = countChar(inp, ' ') + 1;
-        char* tokens[size];
+        char* tokens[countChar(inp, ' ') + 1];
         len = 0;
 
-        cmd cmd_list[size];
+        cmd cmd_list[countChar(inp, '&') + 1];
         int cmd_list_len = 0;
         cmd_list[0].len = 0;
+
+        // parsing of raw input
         
         char delim = ' ';
         while ((tokens[len] = strsep(&inp, &delim)) != NULL){
+
+            // ignoring empty tokens
             if (*tokens[len] == '\0') continue;
+
             else if (strcmp(tokens[len], "&") == 0){
+
+                // ignoring empty commands
                 if (len == 0){
                     continue;
                 }
+
                 tokens[len] = NULL;
-                cmd_list[cmd_list_len].tokens = calloc(sizeof(char*), len);
+                cmd_list[cmd_list_len].tokens = calloc(sizeof(char*), len + 1);
 
                 for (int i = 0; i<len; ++i){
                     cmd_list[cmd_list_len].tokens[i] = calloc(sizeof(char), strlen(tokens[i]) + 1);
@@ -89,14 +102,31 @@ int main(){
             }
             else len++;
         }
+
+        // including the last one
         if (len > 0){
-            cmd_list[cmd_list_len].tokens = tokens;
+            tokens[len] = NULL;
+            cmd_list[cmd_list_len].tokens = calloc(sizeof(char*), len);
+
+            for (int i = 0; i<len; ++i){
+                cmd_list[cmd_list_len].tokens[i] = calloc(sizeof(char), strlen(tokens[i]) + 1);
+                strcpy(cmd_list[cmd_list_len].tokens[i], tokens[i]);
+            }
+
             cmd_list[cmd_list_len].len = len;
             len = 0;
             cmd_list_len++;
         }
         
-        ParseCommand(cmd_list, cmd_list_len);
+        ExecuteCommand(cmd_list, cmd_list_len);
+
+        // freeing memory
         free(to_free);
+        for (int i = 0; i < cmd_list_len; ++i){
+            for (int j = 0; j < cmd_list[i].len; ++j){
+                free(cmd_list[i].tokens[j]);
+            }
+            free(cmd_list[i].tokens);
+        }
     }
 }
