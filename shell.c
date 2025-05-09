@@ -15,7 +15,7 @@ typedef struct {
 // counts the occurrence of the tgt char in string str
 int countChar(char* str, char tgt){
     int cnt = 0;
-    while ((*str) != '\n'){
+    while ((*str) != '\n' && (*str) != '\0'){
         cnt += tgt == *str;
         str++;
     }
@@ -25,33 +25,70 @@ int countChar(char* str, char tgt){
 // error handler
 void ExitWithCode(int errCode){
     if (errCode == 0) exit(0);
-    else {
+    else if (errCode == 1) {
         char error_message[30] = "An error has occurred\n";
         write(STDERR_FILENO, error_message, strlen(error_message));
         exit(1);
     }
+    else if (errCode == 2){
+        char error_message[30] = "Executable not found\n";
+        write(STDERR_FILENO, error_message, strlen(error_message));
+        exit(2);
+    }
 }
 
 // execute parsed commands
-void ExecuteCommand(cmd* cmd_list, int cmd_list_len){
+void ExecuteCommand(cmd* cmd_list, int cmd_list_len, char** paths){
+
     for (int i=0; i<cmd_list_len; ++i){
 
         // built-in commands
-
         if (strcmp(cmd_list[i].tokens[0], "exit") == 0){
             ExitWithCode(0);
         }
 
         int rc = fork();
         if (rc == 0){
-            execvp(cmd_list[i].tokens[0], cmd_list[i].tokens);
-            ExitWithCode(1);
+            
+            // checking for the absolute path
+            if (countChar(cmd_list[i].tokens[0], '/') > 0){
+                if (access(cmd_list[i].tokens[0], X_OK) == 0){
+                    execv(cmd_list[i].tokens[0], cmd_list[i].tokens);
+                    ExitWithCode(1);
+                }
+                else {
+                    ExitWithCode(2);
+                }
+            }
+
+            // checking for relative path
+            else {
+                int j=0;
+                for (; paths[j] != NULL; ++j){
+                    char* tmp = strdup(paths[j]);
+                    strcat(tmp, "/");
+                    strcat(tmp, cmd_list[i].tokens[0]);
+                    if (access(tmp, X_OK) == 0){
+                        execv(tmp, cmd_list[i].tokens);
+                        free(tmp);
+                        ExitWithCode(1);
+                    }
+                    free(tmp);
+                }
+                ExitWithCode(2);
+            }
         }
     }
+
+    // waiting for childs to finish
     for (int i=0; i<cmd_list_len; ++i) wait(NULL);
 }
 
 int main(){
+
+    // all of the search directories
+    char* paths[] = {"/bin", "/usr/bin", NULL};
+
     while (1){
         printf("prompt> ");
 
@@ -103,10 +140,10 @@ int main(){
             else len++;
         }
 
-        // including the last one
+        // including the last command
         if (len > 0){
             tokens[len] = NULL;
-            cmd_list[cmd_list_len].tokens = calloc(sizeof(char*), len);
+            cmd_list[cmd_list_len].tokens = calloc(sizeof(char*), len + 1);
 
             for (int i = 0; i<len; ++i){
                 cmd_list[cmd_list_len].tokens[i] = calloc(sizeof(char), strlen(tokens[i]) + 1);
@@ -118,7 +155,7 @@ int main(){
             cmd_list_len++;
         }
         
-        ExecuteCommand(cmd_list, cmd_list_len);
+        ExecuteCommand(cmd_list, cmd_list_len, paths);
 
         // freeing memory
         free(to_free);
