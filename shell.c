@@ -38,22 +38,43 @@ void ExitWithCode(int errCode){
     }
 }
 
+char* tokenizer(char** inp, char* delim, char* used_char){
+    if (*inp == NULL || **inp == '\0') return NULL;
+    char* token = *inp;
+    while (**inp != '\0'){
+        for (int i = 0; delim[i] != '\0'; ++i){
+            if (**inp == delim[i]){
+                **inp = '\0';
+                (*inp)++;
+                *used_char = delim[i];
+                return token;
+            }
+        }
+        (*inp)++;
+    }
+    *inp = NULL;
+    *used_char = '\0';
+    return token;
+}
+
 cmd* ParseCommand(char* inp, int* cmd_list_len){
-    char* tokens[countChar(inp, ' ') + 2];
+    char* tokens[countChar(inp, ' ') + countChar(inp, '\t') + countChar(inp, '\v') + 2 * (countChar(inp, '>')) + 2];
     int len = 0;
 
     cmd* cmd_list = malloc(sizeof(cmd) * (countChar(inp, '&') + 1));
     cmd_list[0].len = 0;
     
     // tokenization
-    char delim = ' ';
-    while ((tokens[len] = strsep(&inp, &delim)) != NULL){
+    char* delim = strdup(" \t\v>&");
+    char used_char = '\0';
+    while ((tokens[len] = tokenizer(&inp, delim, &used_char)) != NULL){
 
         // ignoring empty tokens
-        if (*tokens[len] == '\0') continue;
+        if (*tokens[len] == '\0');
+        else len++;
 
-        else if (strcmp(tokens[len], "&") == 0){
-
+        if (used_char == ' ' || used_char == '\t' || used_char == '\v') continue;
+        else if (used_char == '&'){
             // ignoring empty commands
             if (len == 0){
                 continue;
@@ -71,11 +92,15 @@ cmd* ParseCommand(char* inp, int* cmd_list_len){
             len = 0;
             (*cmd_list_len)++;
         }
-        else len++;
+        else if (used_char == '>'){
+            tokens[len] = strdup(">");
+            len++; 
+        }
     }
 
     // including the last command
     if (len > 0){
+        
         cmd_list[*cmd_list_len].tokens = calloc(sizeof(char*), len + 1);
         for (int i = 0; i<len; ++i){
             cmd_list[*cmd_list_len].tokens[i] = calloc(sizeof(char), strlen(tokens[i]) + 1);
@@ -86,7 +111,7 @@ cmd* ParseCommand(char* inp, int* cmd_list_len){
         len = 0;
         (*cmd_list_len)++;
     }
-    
+    free(delim);
     return cmd_list;
 }
 
