@@ -90,7 +90,7 @@ cmd* ParseCommand(char* inp, int* cmd_list_len){
 }
 
 // execute parsed commands
-void ExecuteCommand(cmd* cmd_list, int cmd_list_len, char** paths){
+void ExecuteCommand(cmd* cmd_list, int cmd_list_len, char*** paths, int* run){
 
     for (int i=0; i<cmd_list_len; ++i){
 
@@ -98,7 +98,8 @@ void ExecuteCommand(cmd* cmd_list, int cmd_list_len, char** paths){
 
         // exit
         if (strcmp(cmd_list[i].tokens[0], "exit") == 0){
-            ExitWithCode(0);
+            (*run) = 0;
+            return;
         }
 
         // cd
@@ -121,6 +122,23 @@ void ExecuteCommand(cmd* cmd_list, int cmd_list_len, char** paths){
             else if (chdir(getenv("HOME")) != 0) ExitWithCode(1);
         }
 
+        // path
+        else if (strcmp(cmd_list[i].tokens[0], "path") == 0){
+            int path_curr_len = 0;
+            while ((*paths)[path_curr_len] != NULL){
+                free((*paths)[path_curr_len]);
+                path_curr_len++;
+            }
+            free((*paths)[path_curr_len]);
+            free((*paths));
+
+            (*paths) = (char **)calloc(sizeof(char*), (cmd_list[i].len));
+            for (int j = 0; j < cmd_list[i].len - 1; ++j){
+                (*paths)[j] = strdup(cmd_list[i].tokens[j + 1]);
+            }
+            (*paths)[cmd_list[i].len - 1] = NULL;
+        }
+
         // executable files
         else {
             int rc = fork();
@@ -140,8 +158,8 @@ void ExecuteCommand(cmd* cmd_list, int cmd_list_len, char** paths){
                 // checking for relative path
                 else {
                     int j=0;
-                    for (; paths[j] != NULL; ++j){
-                        char* tmp = strdup(paths[j]);
+                    for (; (*paths)[j] != NULL; ++j){
+                        char* tmp = strdup((*paths)[j]);
                         strcat(tmp, "/");
                         strcat(tmp, cmd_list[i].tokens[0]);
                         if (access(tmp, X_OK) == 0){
@@ -164,9 +182,13 @@ void ExecuteCommand(cmd* cmd_list, int cmd_list_len, char** paths){
 int main(){
 
     // all of the search directories
-    char* paths[] = {"/bin", "/usr/bin", NULL};
+    char** paths = calloc(sizeof(char*), 3);
+    paths[0] = strdup("/bin");
+    paths[1] = strdup("/usr/bin");
 
-    while (1){
+    int run = 1;
+
+    while (run){
         printf("prompt> ");
 
         // taking in input
@@ -186,7 +208,7 @@ int main(){
         cmd* cmd_list = ParseCommand(inp, &cmd_list_len);
 
         // Executes the raw input
-        ExecuteCommand(cmd_list, cmd_list_len, paths);
+        ExecuteCommand(cmd_list, cmd_list_len, &paths, &run);
 
         // freeing memory
         free(to_free);
@@ -197,4 +219,12 @@ int main(){
             free(cmd_list[i].tokens);
         }
     }
+
+    // freeing path
+    for (int i = 0; paths[i] != NULL; ++i){
+        free(paths[i]);
+    }
+    free(paths);
+
+    ExitWithCode(0);
 }

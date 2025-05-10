@@ -9,7 +9,7 @@ This is a lightweight shell implemented in C that supports basic command executi
 - Supports parallel execution using `&` operator.  
 Example: `ls & pwd & echo hello`
 
-- Handles the built-in `exit` command to terminate the shell and `cd` command to change directories
+- Handles the built-in `exit` command to terminate the shell and `cd` command to change directories and `path` to modify search paths
 
 - Handles both absolute and relative path
 
@@ -27,7 +27,7 @@ Example: `ls & pwd & echo hello`
 
 - Correctly frees dynamically allocated memory
 
-### `cmd* ParseCommand(char* inp, int* cmd_list_len)`
+#### `cmd* ParseCommand(char* inp, int* cmd_list_len)`
 
 - Tokenizes the input by spaces
 
