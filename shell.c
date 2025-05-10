@@ -38,6 +38,7 @@ void ExitWithCode(int errCode){
     }
 }
 
+// tokenizer
 char* tokenizer(char** inp, char* delim, char* used_char){
     if (*inp == NULL || **inp == '\0') return NULL;
     char* token = *inp;
@@ -57,6 +58,7 @@ char* tokenizer(char** inp, char* delim, char* used_char){
     return token;
 }
 
+// parser
 cmd* ParseCommand(char* inp, int* cmd_list_len){
     char* tokens[countChar(inp, ' ') + countChar(inp, '\t') + countChar(inp, '\v') + 2 * (countChar(inp, '>')) + 2];
     int len = 0;
@@ -225,7 +227,21 @@ void ExecuteCommand(cmd* cmd_list, int cmd_list_len, char*** paths, int* run){
     for (int i=0; i<cmd_list_len; ++i) wait(NULL);
 }
 
-int main(){
+int main(int argc, char* argv[]){
+
+    int to_prompt = 1;
+
+    if (argc > 2){
+        fprintf(stderr, "Usage: %s [batch_file]\n", argv[0]);
+        exit(1);
+    }
+    else if (argc == 2){
+        int fd = open(argv[1], O_RDONLY);
+        if (fd < 0) ExitWithCode(0);
+        dup2(fd, STDIN_FILENO);
+        close(fd);
+        to_prompt = 0;
+    }
 
     // all of the search directories
     char** paths = calloc(sizeof(char*), 3);
@@ -235,7 +251,7 @@ int main(){
     int run = 1;
 
     while (run){
-        printf("prompt> ");
+        if (to_prompt == 1) printf("prompt> ");
 
         // taking in input
         char* inp = NULL;

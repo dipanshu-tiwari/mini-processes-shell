@@ -1,0 +1,4 @@
+ls
+echo hello world
+ls&pwd&ps>out.php
+exit

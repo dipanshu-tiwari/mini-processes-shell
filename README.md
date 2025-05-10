@@ -1,6 +1,6 @@
 # 🐚 Mini Shell (Process-Based Shell)
 
-This is a lightweight shell implemented in C that supports basic command execution and parallel processing using the `&` operator. The shell demonstrates low-level process handling using `fork()` and `execv()` and includes a custom error handler.
+This is a lightweight shell implemented in C that supports basic command execution and parallel processing using the `&` operator. The shell demonstrates low-level process handling using `fork()` and `execv()` and includes a custom error handler. The shell can be used in normal mode or batch mode (using a batch file).
 
 ## 🚀 Features
 
@@ -9,13 +9,15 @@ This is a lightweight shell implemented in C that supports basic command executi
 - Supports parallel execution using `&` operator.  
 Example: `ls & pwd & echo hello`
 
-- Handles the built-in `exit` command to terminate the shell and `cd` command to change directories and `path` to modify search paths
+- Handles the built-in `exit` command to terminate the shell, `cd` command to change directories, and `path` to modify search paths
 
 - Handles both absolute and relative path
 
 - Includes output redirection using `>` operator
 
 - Graceful error messages for failed commands
+
+- Supports input from batch file
 
 ## 📁 Structure
 
@@ -74,8 +76,16 @@ gcc -o shell shell.c
 
 Run it:
 
+##### In normal mode:
+
 ```Bash
 ./shell
+```
+
+##### In batch mode:
+
+```Bash
+./shell <batch-file>
 ```
 
 ## ⚠️ Notes
@@ -84,6 +94,6 @@ Run it:
 
 - This is a minimal implementation; advanced features like piping (`|`), some redirection like `<`, and job control are not included (output redirection is included using `>` operator).
 
-- Commands are split only on spaces and `&`, so quoted strings or complex syntax are not supported.
+- Commands are split only on spaces, `>`, and `&`, so quoted strings or complex syntax are not supported.
 
 - Commands are executed in the order they appear but concurrently (not sequentially) when separated by `&`.
