@@ -13,6 +13,8 @@ Example: `ls & pwd & echo hello`
 
 - Handles both absolute and relative path
 
+- Includes output redirection using `>` operator
+
 - Graceful error messages for failed commands
 
 ## 📁 Structure
@@ -80,7 +82,7 @@ Run it:
 
 - This has only been tested on Linux (Ubuntu 24.04.2 LTS).
 
-- This is a minimal implementation; advanced features like piping (`|`), redirection (`>`, `<`), and job control are not included.
+- This is a minimal implementation; advanced features like piping (`|`), some redirection like `<`, and job control are not included (output redirection is included using `>` operator).
 
 - Commands are split only on spaces and `&`, so quoted strings or complex syntax are not supported.
 

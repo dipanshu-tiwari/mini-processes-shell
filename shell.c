@@ -5,6 +5,7 @@
 #include <unistd.h>
 #include <string.h>
 #include <stdlib.h>
+#include <fcntl.h> // for open()
 
 // structure to store each command
 typedef struct {
@@ -143,6 +144,26 @@ void ExecuteCommand(cmd* cmd_list, int cmd_list_len, char*** paths, int* run){
         else {
             int rc = fork();
             if (rc == 0){
+
+                // checking for output redirection
+                int fd = STDOUT_FILENO;
+                for (int j = 0; cmd_list[i].tokens[j] != NULL; ++j){
+                    if (strcmp(cmd_list[i].tokens[j], ">") == 0){
+                        if (fd != STDOUT_FILENO) ExitWithCode(1);
+                        if (cmd_list[i].tokens[j+1] == NULL || strcmp(cmd_list[i].tokens[j+1], ">") == 0) ExitWithCode(1);
+                        fd = open(cmd_list[i].tokens[j+1], O_WRONLY | O_CREAT | O_TRUNC, 0644);
+                        cmd_list[i].tokens[j] = NULL;
+                        cmd_list[i].tokens[j+1] = NULL;
+                        for (int k = j+2; cmd_list[i].tokens[k] != NULL; ++k){
+                            cmd_list[i].tokens[k-2] = cmd_list[i].tokens[k];
+                            cmd_list[i].tokens[k] = NULL;
+                        }
+                    }
+                }
+                if (fd != STDOUT_FILENO){
+                    dup2(fd, STDOUT_FILENO);
+                    close(fd);
+                }
                 
                 // checking for the absolute path
                 if (countChar(cmd_list[i].tokens[0], '/') > 0){
